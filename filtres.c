@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "image.h"
 
 // вспомогательная функция для освобождения ядра
@@ -9,6 +10,38 @@ void free_gaussian_kernel(float** kernel, int size) {
         free(kernel[i]);
     }
     free(kernel);
+}
+
+// создаёт двумерное ядро Гаусса размером size x size с параметром sigma
+float** create_gaussian_kernel(int size, double sigma) {
+    if (size <= 0 || sigma <= 0) {
+        return NULL;
+    }
+
+    float** kernel = malloc(size * sizeof(float*));
+    for (int i = 0; i < size; i++) {
+        kernel[i] = malloc(size * sizeof(float));
+    }
+
+    int half = size / 2;
+    double sum = 0.0;
+
+    for (int dy = -half; dy <= half; dy++) {
+        for (int dx = -half; dx <= half; dx++) {
+            double d_sq = dx*dx + dy*dy;
+            double value = exp(-d_sq / (2.0 * sigma * sigma));
+            kernel[dy + half][dx + half] = (float)value;
+            sum += value;
+        }
+    }
+
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            kernel[i][j] = (float)(kernel[i][j] / sum);
+        }
+    }
+
+    return kernel;
 }
 
 // доп функция для матриц
@@ -27,7 +60,7 @@ void convolution_3x3_to_tmp(const image* img, int kernel[3][3], pixel** tmp) {
                     // вот тут рассматриваем крайние случаи 
                     if (nx < 0) nx = 0;
                     if (nx >= img->width) nx = img->width - 1;
-                    if (ny < 0) ny = 0; 
+                    if (ny < 0) ny = 0;  
                     if (ny >= img->height) ny = img->height - 1;
 
                     pixel p = img->data[ny][nx];
