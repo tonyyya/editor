@@ -2,6 +2,55 @@
 #include <stdio.h>
 #include "image.h"
 
+// вспомогательная функция для освобождения ядра
+void free_gaussian_kernel(float** kernel, int size) {
+    for (int i = 0; i < size; i++) {
+        free(kernel[i]);
+    }
+    free(kernel);
+}
+
+//доп функция для матриц
+void apply_convolution_3x3(image* img, int kernel[3][3]) {
+    if (img -> height < 1 || img -> widht < 1) return;
+
+    pixel** tmp = malloc(img -> height *size(pixel*));
+    for (int y = 0; y < img -> height; y++) {
+        tmp[y] = malloc(img -> widht *sizeof(pixel));
+    }
+    for (int y = 0; y < img -> height; y++) {
+        for (int x = 0; x < img -> widht; x++) {
+            float sum_r = 0; sum_g = 0, sum_b = 0;
+
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    int nx = x + dx;
+                    int dy = y + dy;
+
+
+                    //вот тут рассматриваем крайние случаи 
+                    if (nx < 0) nx = 0;
+                    if (nx >= img -> widht) nx = img -> widht - 1;
+                    if (ny < 0) ny = 0; 
+                    if (ny => img -> height) ny = img -> height - 1;
+
+                    pixel p = img -> data[ny][nx];
+                    int k = kernel[dy+1][dx+1];
+
+                    sum_r = k * p.r;
+                    sum_g = k * p.g;
+                    sum_b = k * p.b;
+                }
+            }
+
+
+            tmp[y][x].r = (sum_r < 0) ? 0 : (sum_r > 255 ? 255 : (unsigned char)sum_r);
+            tmp[y][x].g = (sum_g < 0) ? 0 : (sum_g > 255 ? 255 : (unsigned char)sum_g);
+            tmp[y][x].b = (sum_b < 0) ? 0 : (sum_b > 255 ? 255 : (unsigned char)sum_b);
+        }
+    }
+}
+
 
 //фильтр для оттенков серого (-gs)
 void apply_grayscale(image* img) {
@@ -98,3 +147,213 @@ void apply_crop(image* img, int new_widht, int new_height) {
 
 
     return 0; }
+
+//фильтр с оттеками серого (-edge threshold)
+void apply_edge(image* img, double threshold) {
+
+    apply_grayscale(img);
+    
+
+    // тут делаем, чтобы есбли изображение было слишком маленкьое
+    if ( img -> widht < 3 || img -> height < 3) {
+
+        for(int y = 0; y < img -> height; y++) {
+            for(int x = 0; x < img -> widht; x++) {
+                img -> data[y][x] = (pixel){0, 0, 0};
+            }
+        }
+        return 0;
+    }
+
+    pixel** tmp = malloc(img->height * sizeof(pixel*));
+    for (int y = 0; y < img->height; y++) {
+        tmp[y] = malloc(img->width * sizeof(pixel));
+    }
+
+    int kernel[3][3] = {
+        {-1, -1, -1},
+        {-1, 8, -1},
+        {-1, -1, -1}
+    };
+
+    convolution_3x3_to_tmp(img, kernel, tmp);
+
+    int thresh_val = (int)(treshold * 255);
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            unsigned char gray = tmp[y][x].r;
+            unsigned char result = (gray > thresh_val) ? 255 : 0;
+            img -> data[y][x] = (pixel){result, result, result};
+            } 
+        }
+    
+    for (int y = 0; y < img->height; y++) {
+        free(tmp[y]);
+    }
+    free(tmp);
+
+}
+
+
+//фильтрация шума (-med window)
+void apply_median(image* img, int window) {
+
+    if (window % 2 ==0 ) {
+        window++
+    }
+    if (window < = 0) {
+        window = 3;
+    }
+
+    int half = window/2;
+
+    pixel** tmp = malloc(img->height * sizeof(pixel*));
+    for (int y = 0; y < img->height; y++) {
+        tmp[y] = malloc(img->width * sizeof(pixel));
+    }
+    
+    for (int y = 0; y < img->height; y++){
+        for (int x = 0; x < img->width; x++)  {
+            unsigned char* reds = malloc(window * window * sizeof(unsigned char));
+            unsigned char* greens = malloc(window * window * sizeof(unsigned char));
+            unsigned char* blues = malloc(window * window * sizeof(unsigned char));
+            int count = 0;
+
+            for (int dy = -half; dy <= half; dy++) {
+                for (int dx = -half; dx <= half; dx++) {
+
+                    int nx = x + dx;
+                    int ny = y + dy;
+
+                    if (nx < 0) nx = 0;
+                    if (nx >= img->width) nx = img->width - 1;
+                    if (ny < 0) ny = 0;
+                    if (ny >= img->height) ny = img->height - 1;
+
+                    pixel p = img->data[ny][nx];
+                    reds[count] = p.r;
+                    greens[count] = p.g;
+                    blues[count] = p.b;
+                    count++;
+
+                }
+            }
+            for (int i = 0; i < count - 1; i++) {
+                for (int j = i + 1; j < count; j++) {
+                    if (reds[i] > reds[j]) { unsigned char t = reds[i]; reds[i] = reds[j]; reds[j] = t; }
+                    if (greens[i] > greens[j]) { unsigned char t = greens[i]; greens[i] = greens[j]; greens[j] = t; }
+                    if (blues[i] > blues[j]) { unsigned char t = blues[i]; blues[i] = blues[j]; blues[j] = t; }
+                }
+            }
+
+
+            int mid = count / 2;
+            unsigned char median_r = reds[mid];
+            unsigned char median_g = greens[mid];
+            unsigned char median_b = blues[mid];
+
+            tmp[y][x].r = median_r;
+            tmp[y][x].g = median_g;
+            tmp[y][x].b = median_b;
+
+            free(reds);
+            free(greens);
+            free(blues);
+        }
+    }
+    for (int y = 0; y < img->height; y++) {
+        memcpy(img->data[y], tmp[y], img->width * sizeof(pixel));
+        free(tmp[y]);
+    }
+    free(tmp);
+}
+
+//еще один фильтр сигма размытие 
+void apply_blur(image* img, double sigma) {
+    int size = (int)(6 * sigma + 1);
+    if (size < 3) size = 3;
+    if (size % 2 == 0) size++;
+
+    float** kernel = create_gaussian_kernel(size, sigma);
+    int half = size / 2;
+
+    pixel** tmp = malloc(img->height * sizeof(pixel*));
+    for (int y = 0; y < img->height; y++) {
+        tmp[y] = malloc(img->width * sizeof(pixel));
+    }
+
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            float sum_r = 0, sum_g = 0, sum_b = 0;
+
+             for (int dy = -half; dy <= half; dy++) {
+                for (int dx = -half; dx <= half; dx++) {
+                    
+                    int nx = x + dx;
+                    int ny = y + dy;
+
+                    if (nx < 0) nx = 0;
+                    if (nx >= img->width) nx = img->width - 1;
+                    if (ny < 0) ny = 0;
+                    if (ny >= img->height) ny = img->height - 1;
+
+                    pixel p = img->data[ny][nx];
+                    float k = kernel[dy + half][dx + half];
+
+                    sum_r += k * p.r;
+                    sum_g += k * p.g;
+                    sum_b += k * p.b;
+                }
+            }
+
+            tmp[y][x].r = (unsigned char)(sum_r + 0.5f);
+            tmp[y][x].g = (unsigned char)(sum_g + 0.5f);
+            tmp[y][x].b = (unsigned char)(sum_b + 0.5f);
+        }
+    }
+
+    for (int y = 0; y < img->height; y++) {
+        memcpy(img->data[y], tmp[y], img->width * sizeof(pixel));
+        free(tmp[y]);
+    }
+    free(tmp);
+    free_gaussian_kernel(kernel, size); }
+
+//glass
+void apply_glass_distortion(image* img, int radius) {
+    if (radius <= 0) radius = 3;
+
+    srand(12345);
+
+    pixel** tmp = malloc(img->height * sizeof(pixel*));
+    for (int y = 0; y < img->height; y++) {
+        tmp[y] = malloc(img->width * sizeof(pixel));
+    }
+
+     for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            int dx = (rand() % (2 * radius + 1)) - radius;
+            int dy = (rand() % (2 * radius + 1)) - radius;
+
+            int nx = x + dx;
+            int ny = y + dy;
+
+            if (nx < 0) nx = 0;
+            if (nx >= img->width) nx = img->width - 1;
+            if (ny < 0) ny = 0;
+            if (ny >= img->height) ny = img->height - 1;
+
+            tmp[y][x] = img->data[ny][nx];
+        } 
+    }
+
+    for (int y = 0; y < img->height; y++) {
+        memcpy(img->data[y], tmp[y], img->width * sizeof(pixel));
+        free(tmp[y]);
+    }
+    free(tmp);
+}
+        
+
+
+
