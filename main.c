@@ -81,11 +81,7 @@ int main(int argc, char* argv[]) {
             apply_glass_distortion(img, rad);
             i++;
         }
-        else if (strcmp(argv[i], "-crystallize") == 0) {
-            int size = (i+1 < argc && argv[i+1][0] != '-') ? atoi(argv[++i]) : 20;
-            apply_crystallize(img, size);
-            i++;
-        }
+       
         else {
             fprintf(stderr, "error: unknown filter: %s\n", argv[i]);
             free_image(img);
