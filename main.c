@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
             i++;
         }
         else if (strcmp(argv[i], "-brush") == 0) {
-            apply_brush(img);
+            brush(img);
             i++;
         }
         else {
