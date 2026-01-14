@@ -28,4 +28,19 @@ void free_image(image* img);
 //безопасное получение пикселя, если вышли за край -- берем ближайший крайний
 pixel get_pixel_clamped(const image* img, int x, int y);
 
+// фильтры
+void apply_grayscale(image* img);
+void apply_negative(image* img);
+void apply_crop(image* img, int new_width, int new_height);
+void apply_edge(image* img, double threshold);
+void apply_median(image* img, int window);
+void apply_blur(image* img, double sigma);
+void apply_glass_distortion(image* img, int radius);
+void apply_crystallize(image* img, int block_size);
+
+// вспомогательные
+void convolution_3x3_to_tmp(const image* img, int kernel[3][3], pixel** tmp);
+float** create_gaussian_kernel(int size, double sigma);
+void free_gaussian_kernel(float** kernel, int size);
+
 #endif 
