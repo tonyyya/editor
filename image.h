@@ -37,6 +37,7 @@ void apply_median(image* img, int window);
 void apply_blur(image* img, double sigma);
 void apply_glass_distortion(image* img, int radius);
 void apply_sharpen(image* img);
+void brush(const image* in, image* out)
 
 
 // вспомогательные
