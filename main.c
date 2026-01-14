@@ -81,7 +81,10 @@ int main(int argc, char* argv[]) {
             apply_glass_distortion(img, rad);
             i++;
         }
-       
+        else if (strcmp(argv[i], "-brush") == 0) {
+            apply_brush(img);
+            i++;
+        }
         else {
             fprintf(stderr, "error: unknown filter: %s\n", argv[i]);
             free_image(img);
