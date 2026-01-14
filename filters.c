@@ -96,14 +96,14 @@ void apply_grayscale(image* img) {
 }
 
 // горизонтальное размытие ("мазок кистью")
-void apply_brush(image* img) {
+void brush(image* img) {
     if (!img || img->width <= 0 || img->height <= 0) return;
 
     // создаём временную копию
     image* tmp = create_image(img->width, img->height);
     if (!tmp) return;
 
-    const int radius = 3; // мазок длиной 7 пикселей
+    const int radius = 20; // мазок длиной 51 пикселей
 
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
@@ -371,4 +371,5 @@ void apply_glass_distortion(image* img, int radius) {
     }
     free(tmp);
 }
+
 
