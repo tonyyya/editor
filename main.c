@@ -7,24 +7,24 @@
 int main(int argc, char* argv[]) {
     // если запустили без аргументов — показываем справку
     if (argc == 1) {
-        printf("пример использования: %s in.bmp out.bmp -gs -neg -crop 800 600 ...\n", argv[0]);
+        printf("usage: %s in.bmp out.bmp -gs -neg -crop 800 600 ...\n", argv[0]);
         return 0;
     }
 
     // если аргументов меньше трёх — ошибка
     if (argc < 3) {
-        fprintf(stderr, "ошибка: нужно указать входной и выходной файл\n");
+        fprintf(stderr, "error: input and output filenames are required\n");
         return 1;
     }
 
-    // загружаем изображение
+    // загружаем изображение из файла
     image* img = NULL;
     if (!load_bmp(argv[1], &img)) {
-        fprintf(stderr, "ошибка: не удалось загрузить '%s'\n", argv[1]);
+        fprintf(stderr, "error: failed to load '%s'\n", argv[1]);
         return 1;
     }
 
-    // применяем фильтры по порядку
+    // применяем фильтры по порядку, начиная с 4-го аргумента (argv[3])
     int i = 3;
     while (i < argc) {
         if (strcmp(argv[i], "-gs") == 0) {
@@ -37,19 +37,18 @@ int main(int argc, char* argv[]) {
         }
         else if (strcmp(argv[i], "-crop") == 0) {
             if (i + 2 >= argc) {
-                fprintf(stderr, "ошибка: crop требует два параметра (ширина высота)\n");
+                fprintf(stderr, "error: crop requires two parameters (width height)\n");
                 free_image(img);
                 return 1;
             }
             int w = atoi(argv[i+1]);
             int h = atoi(argv[i+2]);
-            // предполагаем, что apply_crop возвращает void (как в твоём коде)
             apply_crop(img, w, h);
             i += 3;
         }
         else if (strcmp(argv[i], "-edge") == 0) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "ошибка: edge требует порог (0.0–1.0)\n");
+                fprintf(stderr, "error: edge requires a threshold (0.0–1.0)\n");
                 free_image(img);
                 return 1;
             }
@@ -59,7 +58,7 @@ int main(int argc, char* argv[]) {
         }
         else if (strcmp(argv[i], "-med") == 0) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "ошибка: med требует размер окна\n");
+                fprintf(stderr, "error: med requires window size\n");
                 free_image(img);
                 return 1;
             }
@@ -69,7 +68,7 @@ int main(int argc, char* argv[]) {
         }
         else if (strcmp(argv[i], "-blur") == 0) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "ошибка: blur требует sigma\n");
+                fprintf(stderr, "error: blur requires sigma\n");
                 free_image(img);
                 return 1;
             }
@@ -88,21 +87,21 @@ int main(int argc, char* argv[]) {
             i++;
         }
         else {
-            fprintf(stderr, "неизвестный фильтр: %s\n", argv[i]);
+            fprintf(stderr, "error: unknown filter: %s\n", argv[i]);
             free_image(img);
             return 1;
         }
     }
 
-    // сохраняем результат
+    // сохраняем результат в выходной файл
     if (!save_bmp(argv[2], img)) {
-        fprintf(stderr, "ошибка: не удалось сохранить '%s'\n", argv[2]);
+        fprintf(stderr, "error: failed to save '%s'\n", argv[2]);
         free_image(img);
         return 1;
     }
 
     // освобождаем память
     free_image(img);
-    printf("готово! результат: %s\n", argv[2]);
+    printf("done! result: %s\n", argv[2]);
     return 0;
 }
