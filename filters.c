@@ -103,7 +103,7 @@ void brush(image* img) {
     image* tmp = create_image(img->width, img->height);
     if (!tmp) return;
 
-    const int radius = 20; // мазок длиной 51 пикселей
+    const int radius = 52; // мазок длиной 105 пикселей
 
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
@@ -371,5 +371,6 @@ void apply_glass_distortion(image* img, int radius) {
     }
     free(tmp);
 }
+
 
 
