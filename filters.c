@@ -95,33 +95,42 @@ void apply_grayscale(image* img) {
     }
 }
 
-void brush(const image* in, image* out) { // горизонтальное размытие
-    if (!in || !out) return;
-    if (in->width != out->width || in->height != out->height) return;
+// горизонтальное размытие ("мазок кистью")
+void apply_brush(image* img) {
+    if (!img || img->width <= 0 || img->height <= 0) return;
 
-    int w = in->width;
-    int h = in->height;
-    const int radius = 3; // длина мазка 7 пикселей
+    // создаём временную копию
+    image* tmp = create_image(img->width, img->height);
+    if (!tmp) return;
 
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
+    const int radius = 3; // мазок длиной 7 пикселей
+
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
             long sum_r = 0, sum_g = 0, sum_b = 0;
             int count = 0;
 
-            // горизонтальный мазок
+            // усредняем по горизонтали
             for (int dx = -radius; dx <= radius; dx++) {
-                pixel p = get_pixel_clamped(in, x + dx, y);
+                pixel p = get_pixel_clamped(img, x + dx, y);
                 sum_r += p.r;
                 sum_g += p.g;
                 sum_b += p.b;
                 count++;
             }
 
-            out->data[y][x].r = (unsigned char)(sum_r / count);
-            out->data[y][x].g = (unsigned char)(sum_g / count);
-            out->data[y][x].b = (unsigned char)(sum_b / count);
+            tmp->data[y][x].r = (unsigned char)(sum_r / count);
+            tmp->data[y][x].g = (unsigned char)(sum_g / count);
+            tmp->data[y][x].b = (unsigned char)(sum_b / count);
         }
     }
+
+    // копируем результат обратно
+    for (int y = 0; y < img->height; y++) {
+        memcpy(img->data[y], tmp->data[y], img->width * sizeof(pixel));
+    }
+
+    free_image(tmp);
 }
 
 // фильтр негативный (-neg) (я осуждаю негатив)
@@ -362,3 +371,4 @@ void apply_glass_distortion(image* img, int radius) {
     }
     free(tmp);
 }
+
